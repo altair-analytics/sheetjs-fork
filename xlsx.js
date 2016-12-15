@@ -5701,9 +5701,9 @@ function write_drawing(images) {
 			twoCell += '<xdr:to><xdr:col>'+toCol+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+toRow+'</xdr:row><xdr:rowOff>99999</xdr:rowOff></xdr:to>';
 			twoCell += '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'+(i+1)+'" name="'+image.name+'">'
 			twoCell += '</xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>';
-			twoCell += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId1"/>';
+			twoCell += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId'+(i+1)+'"/>';
 			twoCell += '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/>';
-			o[o.length] = (writextag('xdr:twoCellAnchor', twoCell, images[0].attrs));
+			o[o.length] = (writextag('xdr:twoCellAnchor', twoCell, images[i].attrs));
 		}
 	}
 
@@ -11044,6 +11044,7 @@ function rgb_tint(hex, tint) {
 var DEF_MDW = 6, MAX_MDW = 15, MIN_MDW = 1, MDW = DEF_MDW;
 function width2px(width) { return Math.floor(( width + (Math.round(128/MDW))/256 )* MDW ); }
 function px2char(px) { return (Math.floor((px - 5)/MDW * 100 + 0.5))/100; }
+function px2pt(px) { return px * 72 / 96; }
 function char2width(chr) { return (Math.round((chr * MDW + 5)/MDW*256))/256; }
 //function px2char_(px) { return (((px - 5)/MDW * 100 + 0.5))/100; }
 //function char2width_(chr) { return (((chr * MDW + 5)/MDW*256))/256; }
@@ -16339,33 +16340,42 @@ function write_ws_xml_data(ws, opts, idx, wb) {
 			if(_cell === undefined) continue;
 			if((cell = write_ws_xml_cell(_cell, ref, ws, opts, idx, wb, date1904)) != null) r.push(cell);
 		}
-		if(r.length > 0 || (rows && rows[R])) {
-			params = ({r:rr});
-			if(rows && rows[R]) {
-				row = rows[R];
-				if(row.hidden) params.hidden = 1;
-				height = -1;
-				if(row.hpx) height = px2pt(row.hpx);
-				else if(row.hpt) height = row.hpt;
-				if(height > -1) { params.ht = height; params.customHeight = 1; }
-				if(row.level) { params.outlineLevel = row.level; }
-			}
-			o[o.length] = (writextag('row', r.join(""), params));
-		}
-	}
-	if(rows) for(; R < rows.length; ++R) {
-		if(rows && rows[R]) {
-			params = ({r:R+1});
-			row = rows[R];
-			if(row.hidden) params.hidden = 1;
-			height = -1;
-			if (row.hpx) height = px2pt(row.hpx);
-			else if (row.hpt) height = row.hpt;
-			if (height > -1) { params.ht = height; params.customHeight = 1; }
-			if (row.level) { params.outlineLevel = row.level; }
-			o[o.length] = (writextag('row', "", params));
-		}
-	}
+        if(r.length > 0) {
+            // 18.3.1.73 row
+            var params = {r:rr};
+            if(rows && rows[R]) {
+                row = rows[R];
+                if(row.hidden) params.hidden = 1;
+                height = -1;
+                if(row.hpx) height = px2pt(row.hpx);
+                else if(row.hpt) height = row.hpt;
+                if(height > -1) { params.ht = height; params.customHeight = 1; }
+                if(row.level) { params.outlineLevel = row.level; }
+            }
+            if(typeof ws['!rows'] !== 'undefined' && ws['!rows'].length > R) {
+                var row = ws['!rows'][R];
+                if (row.hidden) params.hidden = 1;
+                var height = -1;
+                if (row.hpx) height = px2pt(row.hpx);
+                else if (row.hpt) height = row.hpt;
+                if (height > -1) { params.ht = height; params.customHeight = 1; }
+            };
+            o[o.length] = (writextag('row', r.join(""), params));
+        }
+    }
+    if(rows) for(; R < rows.length; ++R) {
+        if(rows && rows[R]) {
+            params = ({r:R+1});
+            row = rows[R];
+            if(row.hidden) params.hidden = 1;
+            height = -1;
+            if (row.hpx) height = px2pt(row.hpx);
+            else if (row.hpt) height = row.hpt;
+            if (height > -1) { params.ht = height; params.customHeight = 1; }
+            if (row.level) { params.outlineLevel = row.level; }
+            o[o.length] = (writextag('row', "", params));
+        }
+    }
 	return o.join("");
 }
 
@@ -26944,51 +26954,66 @@ f = "docProps/app.xml";
 	var people = ["SheetJ5"];
 	opts.tcid = 0;
 
-	for(rId=1;rId <= wb.SheetNames.length; ++rId) {
-		var wsrels = {'!id':{}};
-		var ws = wb.Sheets[wb.SheetNames[rId-1]];
-		var _type = (ws || {})["!type"] || "sheet";
-		switch(_type) {
-		case "chart":
-			/* falls through */
-		default:
-			f = "xl/worksheets/sheet" + rId + "." + wbext;
-			zip_add_file(zip, f, write_ws_xml(rId-1, opts, wb, wsrels));
-			ct.sheets.push(f);
-			add_rels(opts.wbrels, -1, "worksheets/sheet" + rId + "." + wbext, RELS.WS[0]);
-		}
+    for (var rId = 1; rId <= wb.SheetNames.length; ++rId) {
+        var s      = wb.SheetNames[rId - 1];
+        var ws     = wb.Sheets[s] || {};
+        var wsrels = { '!id': {} };
+        var draw_rels = [];
 
-		if(ws) {
-			var comments = ws['!comments'];
-			var need_vml = false;
-			var cf = "";
-			if(comments && comments.length > 0) {
-				var needtc = false;
-				comments.forEach(function(carr) {
-					carr[1].forEach(function(c) { if(c.T == true) needtc = true; });
-				});
-				if(needtc) {
-					cf = "xl/threadedComments/threadedComment" + rId + ".xml";
-					zip_add_file(zip, cf, write_tcmnt_xml(comments, people, opts));
-					ct.threadedcomments.push(cf);
-					add_rels(wsrels, -1, "../threadedComments/threadedComment" + rId + ".xml", RELS.TCMNT);
-				}
+        // 1) IMAGES → media files + drawing rels
+        var images = ws['!images'] || [];
+        images.forEach(function(image, idx) {
+            var sId     = idx + 1;
+            var imgPath = "xl/media/" + image.name;
+            zip.file(imgPath, image.data, image.opts);
+            add_rels(draw_rels, sId, "../media/" + image.name, RELS.IMG);
+        });
 
-				cf = "xl/comments" + rId + "." + wbext;
-				zip_add_file(zip, cf, write_comments_xml(comments, opts));
-				ct.comments.push(cf);
-				add_rels(wsrels, -1, "../comments" + rId + "." + wbext, RELS.CMNT);
-				need_vml = true;
-			}
-			if(ws['!legacy']) {
-				if(need_vml) zip_add_file(zip, "xl/drawings/vmlDrawing" + (rId) + ".vml", write_vml(rId, ws['!comments']));
-			}
-			delete ws['!comments'];
-			delete ws['!legacy'];
-		}
+        // 2) DRAWING XML + its rels
+        var drawingPath     = "xl/drawings/drawing" + rId + "." + wbext;
+        var drawingRelsPath = "xl/drawings/_rels/drawing" + rId + "." + wbext + ".rels";
+        zip.file(drawingPath, write_drawing(images));
+        add_rels(wsrels, rId, "../drawings/drawing" + rId + "." + wbext, RELS.DRAW);
+        zip.file(drawingRelsPath, write_rels(draw_rels));
 
-		if(wsrels['!id'].rId1) zip_add_file(zip, get_rels_path(f), write_rels(wsrels));
-	}
+        // 3) COMMENTS & threaded comments
+        var comments = ws['!comments'];
+        var need_vml = false;
+        if (comments && comments.length) {
+            // threaded comments?
+            var needtc = false;
+            comments.forEach(function(carr) {
+                carr[1].forEach(function(c) { if (c.T === true) needtc = true; });
+            });
+            if (needtc) {
+                var tcmntPath = "xl/threadedComments/threadedComment" + rId + ".xml";
+                zip.file(tcmntPath, write_tcmnt_xml(comments, people, opts));
+                ct.threadedcomments.push(tcmntPath);
+                add_rels(wsrels, -1, "../threadedComments/threadedComment" + rId + ".xml", RELS.TCMNT);
+            }
+            // old‐style comments
+            var commentsPath = "xl/comments" + rId + "." + wbext;
+            zip.file(commentsPath, write_comments_xml(comments, opts));
+            ct.comments.push(commentsPath);
+            add_rels(wsrels, -1, "../comments" + rId + "." + wbext, RELS.CMNT);
+            need_vml = true;
+        }
+        // legacy VML if requested
+        if (ws['!legacy'] && need_vml) {
+            var vmlPath = "xl/drawings/vmlDrawing" + rId + ".vml";
+            zip.file(vmlPath, write_vml(rId, comments));
+        }
+        delete ws['!comments'];
+        delete ws['!legacy'];
+
+        // 4) WORKSHEET XML + its rels
+        var sheetPath     = "xl/worksheets/sheet" + rId + "." + wbext;
+        var sheetRelsPath = "xl/worksheets/_rels/sheet" + rId + "." + wbext + ".rels";
+        zip.file(sheetPath, write_ws(rId - 1, sheetPath, opts, wb));
+        ct.sheets.push(sheetPath);
+        add_rels(opts.wbrels, rId, "worksheets/sheet" + rId + "." + wbext, RELS.WS);
+        zip.file(sheetRelsPath, write_rels(wsrels));
+    }
 
 	if(opts.Strings != null && opts.Strings.length > 0) {
 		f = "xl/sharedStrings." + wbext;
