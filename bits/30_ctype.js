@@ -265,6 +265,8 @@ function write_ct(ct, opts, raw)/*:string*/ {
 		});
 		o = o.concat([
 			['xml', 'application/xml'],
+			['png', 'image/png'],
+			['jpg', 'image/jpeg'],
 			['bin', 'application/vnd.ms-excel.sheet.binary.macroEnabled.main'],
 			['vml', 'application/vnd.openxmlformats-officedocument.vmlDrawing'],
 			['data', 'application/vnd.openxmlformats-officedocument.model+data'],
@@ -320,6 +322,7 @@ function write_ct(ct, opts, raw)/*:string*/ {
 	f3('themes');
 	['strs', 'styles'].forEach(f1);
 	['coreprops', 'extprops', 'custprops'].forEach(f3);
+	o[o.length] = '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>';
 	f3('vba');
 	f3('comments');
 	f3('threadedcomments');

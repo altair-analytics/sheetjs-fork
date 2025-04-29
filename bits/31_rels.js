@@ -76,6 +76,40 @@ function write_rels(rels)/*:string*/ {
 	return o.join("");
 }
 
+var DRAW_ROOT = writextag('xdr:wsDr', null, {
+	'xmlns:xdr': 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing',
+	'xmlns:a': 'http://schemas.openxmlformats.org/drawingml/2006/main'
+	//'xmlns:ns0': XMLNS.RELS,
+	// 'xmlns': XMLNS.RELS
+});
+
+function write_drawing(images) {
+	var o = [];
+	o[o.length] = (XML_HEADER);
+	o[o.length] = (DRAW_ROOT);
+
+	for (var i = 0; i < images.length; i++) {
+		var image = images[i];
+		var pos = image.position || {};
+		if (pos.type === 'twoCellAnchor') {
+			var from = pos.from || {}, to = pos.to || {},
+				fromCol = from.col || 0, toCol = to.col || 0,
+				fromRow = from.row || 0, toRow = to.row || 0;
+
+			var twoCell = '<xdr:from><xdr:col>'+fromCol+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+fromRow+'</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>';
+			twoCell += '<xdr:to><xdr:col>'+toCol+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+toRow+'</xdr:row><xdr:rowOff>99999</xdr:rowOff></xdr:to>';
+			twoCell += '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'+(i+1)+'" name="'+image.name+'">'
+			twoCell += '</xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>';
+			twoCell += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId'+(i+1)+'"/>';
+			twoCell += '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/>';
+			o[o.length] = (writextag('xdr:twoCellAnchor', twoCell, images[i].attrs));
+		}
+	}
+
+	if(o.length>2){ o[o.length] = ('</xdr:wsDr>'); o[1]=o[1].replace("/>",">"); }
+	return o.join("");
+}
+
 function add_rels(rels, rId/*:number*/, f, type, relobj, targetmode/*:?string*/)/*:number*/ {
 	if(!relobj) relobj = {};
 	if(!rels['!id']) rels['!id'] = {};

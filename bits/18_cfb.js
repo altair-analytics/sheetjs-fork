@@ -1479,6 +1479,7 @@ function parse_local_file(blob/*:CFBlob*/, csz/*:number*/, usz/*:number*/, o/*:C
 	//if((crc32>>0) != (_crc32>>0)) warn_or_throw(wrn, "Bad CRC32 checksum: " + crc32 + " != " + _crc32);
 	cfb_add(o, name, data, {unsafe: true, mt: date});
 }
+
 function write_zip(cfb/*:CFBContainer*/, options/*:CFBWriteOpts*/)/*:RawBytes*/ {
 	var _opts = options || {};
 	var out = [], cdirs = [];

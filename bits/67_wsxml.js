@@ -627,6 +627,9 @@ function write_ws_xml(idx/*:number*/, opts, wb/*:Workbook*/, rels)/*:string*/ {
 	/* conditionalFormatting */
 	/* dataValidations */
 
+	var images = ws['!images'] || [];
+	if (images.length) o[o.length] = '<drawing r:id="rId1"/>';
+
 	var relc = -1, rel, rId = -1;
 	if(/*::(*/ws['!links']/*::||[])*/.length > 0) {
 		o[o.length] = "<hyperlinks>";

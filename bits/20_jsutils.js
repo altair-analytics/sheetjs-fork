@@ -1,4 +1,6 @@
 function keys(o/*:any*/)/*:Array<any>*/ {
+	if (o == null)
+		return [];
 	var ks = Object.keys(o), o2 = [];
 	for(var i = 0; i < ks.length; ++i) if(Object.prototype.hasOwnProperty.call(o, ks[i])) o2.push(ks[i]);
 	return o2;

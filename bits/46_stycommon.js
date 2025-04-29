@@ -54,6 +54,7 @@ function rgb_tint(hex, tint) {
 var DEF_MDW = 6, MAX_MDW = 15, MIN_MDW = 1, MDW = DEF_MDW;
 function width2px(width) { return Math.floor(( width + (Math.round(128/MDW))/256 )* MDW ); }
 function px2char(px) { return (Math.floor((px - 5)/MDW * 100 + 0.5))/100; }
+function px2pt(px) { return px * 72 / 96; }
 function char2width(chr) { return (Math.round((chr * MDW + 5)/MDW*256))/256; }
 //function px2char_(px) { return (((px - 5)/MDW * 100 + 0.5))/100; }
 //function char2width_(chr) { return (((chr * MDW + 5)/MDW*256))/256; }

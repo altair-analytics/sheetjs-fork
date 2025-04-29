@@ -211,8 +211,19 @@ function write_zip_xlsx(wb/*:Workbook*/, opts/*:WriteOpts*/)/*:ZIP*/ {
 	opts.tcid = 0;
 
 	for(rId=1;rId <= wb.SheetNames.length; ++rId) {
-		var wsrels = {'!id':{}};
-		var ws = wb.Sheets[wb.SheetNames[rId-1]];
+		var s = wb.SheetNames[rId-1], ws = wb.Sheets[wb.SheetNames[rId-1]],
+			images = ws['!images'] || [];
+		var rels = ws['!rels'] = [], draw_rels = [];
+		for (var sId=1; sId < images.length+1; ++sId) {
+			var image = images[sId - 1];
+			f = 'xl/media/' + image.name;
+			zip_add_file(zip, f, image.data);
+			add_rels(draw_rels, sId, "../media/" + image.name, RELS.IMG);
+		}
+		zip_add_file(zip, "xl/drawings/drawing" + rId + "." + wbext, write_drawing(images));
+		add_rels(rels, rId, "../drawings/drawing" + rId + "." + wbext, RELS.DRAW);
+		zip_add_file(zip, "xl/drawings/_rels/drawing" + rId + "." + wbext + ".rels", write_rels(draw_rels));
+		zip_add_file(zip, "xl/worksheets/_rels/sheet" + rId + "." + wbext + '.rels', write_rels(rels));		var wsrels = {'!id':{}};
 		var _type = (ws || {})["!type"] || "sheet";
 		switch(_type) {
 		case "chart":
