@@ -5790,29 +5790,68 @@ var DRAW_ROOT = writextag('xdr:wsDr', null, {
 
 function write_drawing(images) {
 	var o = [];
-	o[o.length] = (XML_HEADER);
-	o[o.length] = (DRAW_ROOT);
+	o[o.length] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+	o[o.length] = '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">';
 
 	for (var i = 0; i < images.length; i++) {
 		var image = images[i];
 		var pos = image.position || {};
+
 		if (pos.type === 'twoCellAnchor') {
 			var from = pos.from || {}, to = pos.to || {},
 				fromCol = from.col || 0, toCol = to.col || 0,
 				fromRow = from.row || 0, toRow = to.row || 0;
 
-			var twoCell = '<xdr:from><xdr:col>'+fromCol+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+fromRow+'</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>';
-			twoCell += '<xdr:to><xdr:col>'+toCol+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+toRow+'</xdr:row><xdr:rowOff>99999</xdr:rowOff></xdr:to>';
-			twoCell += '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'+(i+1)+'" name="'+image.name+'">'
-			twoCell += '</xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>';
-			twoCell += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId'+(i+1)+'"/>';
+			var twoCell = '<xdr:from><xdr:col>' + fromCol + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + fromRow + '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>';
+			twoCell += '<xdr:to><xdr:col>' + toCol + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + toRow + '</xdr:row><xdr:rowOff>99999</xdr:rowOff></xdr:to>';
+			twoCell += '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 1) + '" name="' + image.name + '"></xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>';
+			twoCell += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId' + (i + 1) + '"/>';
 			twoCell += '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/>';
-			o[o.length] = (writextag('xdr:twoCellAnchor', twoCell, images[i].attrs));
+			o[o.length] = writextag('xdr:twoCellAnchor', twoCell, image.attrs);
+		}
+		else if (pos.type === 'oneCellAnchor') {
+			var from = pos.from || {}, ext = pos.ext || {},
+				fromCol = from.col || 0, fromRow = from.row || 0,
+				colOff = from.colOff || 0, rowOff = from.rowOff || 0,
+				width = ext.width || 100000, height = ext.height || 100000;
+
+			var oneCell = '<xdr:from><xdr:col>' + fromCol + '</xdr:col><xdr:colOff>' + colOff + '</xdr:colOff><xdr:row>' + fromRow + '</xdr:row><xdr:rowOff>' + rowOff + '</xdr:rowOff></xdr:from>';
+			oneCell += '<xdr:ext cx="' + width + '" cy="' + height + '"/>';
+			oneCell += '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 1) + '" name="' + image.name + '"></xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>';
+			oneCell += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId' + (i + 1) + '"/>';
+			oneCell += '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/>';
+			o[o.length] = writextag('xdr:oneCellAnchor', oneCell, image.attrs);
+		}
+		else if (pos.type === 'absoluteAnchor') {
+			var posXY = pos.pos || {}, ext = pos.ext || {},
+				x = posXY.x || 0, y = posXY.y || 0,
+				width = ext.width || 100000, height = ext.height || 100000;
+
+			var absAnchor = '<xdr:pos x="' + x + '" y="' + y + '"/>';
+			absAnchor += '<xdr:ext cx="' + width + '" cy="' + height + '"/>';
+			absAnchor += '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 1) + '" name="' + image.name + '"></xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>';
+			absAnchor += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId' + (i + 1) + '"/>';
+			absAnchor += '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/>';
+			o[o.length] = writextag('xdr:absoluteAnchor', absAnchor, image.attrs);
 		}
 	}
 
-	if(o.length>2){ o[o.length] = ('</xdr:wsDr>'); o[1]=o[1].replace("/>",">"); }
+	if (o.length > 2) {
+		o[o.length] = '</xdr:wsDr>';
+		o[1] = o[1].replace("/>", ">");
+	}
 	return o.join("");
+}
+
+// Helper function to create XML tags (assumed to be available)
+function writextag(tag, content, attrs) {
+	var out = '<' + tag;
+	if (attrs) {
+		for (var key in attrs) {
+			out += ' ' + key + '="' + attrs[key] + '"';
+		}
+	}
+	return out + (content ? '>' + content + '</' + tag + '>' : '/>');
 }
 
 function add_rels(rels, rId/*:number*/, f, type, relobj, targetmode/*:?string*/)/*:number*/ {
