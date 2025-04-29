@@ -5533,17 +5533,6 @@ function write_drawing(images) {
 	return o.join("");
 }
 
-// Helper function to create XML tags (assumed to be available)
-function writextag(tag, content, attrs) {
-	var out = '<' + tag;
-	if (attrs) {
-		for (var key in attrs) {
-			out += ' ' + key + '="' + attrs[key] + '"';
-		}
-	}
-	return out + (content ? '>' + content + '</' + tag + '>' : '/>');
-}
-
 function add_rels(rels, rId/*:number*/, f, type, relobj, targetmode/*:?string*/)/*:number*/ {
 	if(!relobj) relobj = {};
 	if(!rels['!id']) rels['!id'] = {};
