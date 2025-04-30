@@ -223,7 +223,8 @@ function write_zip_xlsx(wb/*:Workbook*/, opts/*:WriteOpts*/)/*:ZIP*/ {
 		zip_add_file(zip, "xl/drawings/drawing" + rId + "." + wbext, write_drawing(images));
 		add_rels(rels, rId, "../drawings/drawing" + rId + "." + wbext, RELS.DRAW);
 		zip_add_file(zip, "xl/drawings/_rels/drawing" + rId + "." + wbext + ".rels", write_rels(draw_rels));
-		zip_add_file(zip, "xl/worksheets/_rels/sheet" + rId + "." + wbext + '.rels', write_rels(rels));		var wsrels = {'!id':{}};
+		zip_add_file(zip, "xl/worksheets/_rels/sheet" + rId + "." + wbext + '.rels', write_rels(rels));
+		var wsrels = {'!id':{}};
 		var _type = (ws || {})["!type"] || "sheet";
 		switch(_type) {
 		case "chart":

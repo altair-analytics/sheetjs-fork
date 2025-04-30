@@ -265,8 +265,6 @@ function write_ct(ct, opts, raw)/*:string*/ {
 		});
 		o = o.concat([
 			['xml', 'application/xml'],
-			['png', 'image/png'],
-			['jpg', 'image/jpeg'],
 			['bin', 'application/vnd.ms-excel.sheet.binary.macroEnabled.main'],
 			['vml', 'application/vnd.openxmlformats-officedocument.vmlDrawing'],
 			['data', 'application/vnd.openxmlformats-officedocument.model+data'],

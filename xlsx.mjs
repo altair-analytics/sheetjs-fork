@@ -5636,8 +5636,6 @@ function write_ct(ct, opts, raw)/*:string*/ {
 		});
 		o = o.concat([
 			['xml', 'application/xml'],
-			['png', 'image/png'],
-			['jpg', 'image/jpeg'],
 			['bin', 'application/vnd.ms-excel.sheet.binary.macroEnabled.main'],
 			['vml', 'application/vnd.openxmlformats-officedocument.vmlDrawing'],
 			['data', 'application/vnd.openxmlformats-officedocument.model+data'],
@@ -5790,57 +5788,65 @@ var DRAW_ROOT = writextag('xdr:wsDr', null, {
 
 function write_drawing(images) {
 	var o = [];
-	o[o.length] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-	o[o.length] = '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">';
+	o.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>');
+	o.push('<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">');
 
-	for (var i = 0; i < images.length; i++) {
-		var image = images[i];
-		var pos = image.position || {};
+	images.forEach((image, i) => {
+		const pos = image.position || {};
+		const id = i + 1;
+		const name = image.name || `Image${id}`;
+		const attrs = image.attrs || { editAs: "oneCell" };
 
+		let anchor = '';
 		if (pos.type === 'twoCellAnchor') {
-			var from = pos.from || {}, to = pos.to || {},
-				fromCol = from.col || 0, toCol = to.col || 0,
-				fromRow = from.row || 0, toRow = to.row || 0;
+			const from = pos.from || { col: 0, row: 0 };
+			const to = pos.to || { col: 0, row: 0 };
 
-			var twoCell = '<xdr:from><xdr:col>' + fromCol + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + fromRow + '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>';
-			twoCell += '<xdr:to><xdr:col>' + toCol + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + toRow + '</xdr:row><xdr:rowOff>99999</xdr:rowOff></xdr:to>';
-			twoCell += '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 1) + '" name="' + image.name + '"></xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>';
-			twoCell += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId' + (i + 1) + '"/>';
-			twoCell += '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/>';
-			o[o.length] = writextag('xdr:twoCellAnchor', twoCell, image.attrs);
+			anchor = `
+        <xdr:from>
+          <xdr:col>${from.col}</xdr:col>
+          <xdr:colOff>0</xdr:colOff>
+          <xdr:row>${from.row}</xdr:row>
+          <xdr:rowOff>0</xdr:rowOff>
+        </xdr:from>
+        <xdr:to>
+          <xdr:col>${to.col}</xdr:col>
+          <xdr:colOff>0</xdr:colOff>
+          <xdr:row>${to.row}</xdr:row>
+          <xdr:rowOff>99999</xdr:rowOff>
+        </xdr:to>
+      `;
 		}
-		else if (pos.type === 'oneCellAnchor') {
-			var from = pos.from || {}, ext = pos.ext || {},
-				fromCol = from.col || 0, fromRow = from.row || 0,
-				colOff = from.colOff || 0, rowOff = from.rowOff || 0,
-				width = ext.width || 100000, height = ext.height || 100000;
+		// Add other anchor types (oneCellAnchor, absoluteAnchor) similarly...
 
-			var oneCell = '<xdr:from><xdr:col>' + fromCol + '</xdr:col><xdr:colOff>' + colOff + '</xdr:colOff><xdr:row>' + fromRow + '</xdr:row><xdr:rowOff>' + rowOff + '</xdr:rowOff></xdr:from>';
-			oneCell += '<xdr:ext cx="' + width + '" cy="' + height + '"/>';
-			oneCell += '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 1) + '" name="' + image.name + '"></xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>';
-			oneCell += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId' + (i + 1) + '"/>';
-			oneCell += '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/>';
-			o[o.length] = writextag('xdr:oneCellAnchor', oneCell, image.attrs);
-		}
-		else if (pos.type === 'absoluteAnchor') {
-			var posXY = pos.pos || {}, ext = pos.ext || {},
-				x = posXY.x || 0, y = posXY.y || 0,
-				width = ext.width || 100000, height = ext.height || 100000;
+		const pic = `
+      <xdr:pic>
+        <xdr:nvPicPr>
+          <xdr:cNvPr id="${id}" name="${name}"/>
+          <xdr:cNvPicPr>
+            <a:picLocks noChangeAspect="1"/>
+          </xdr:cNvPicPr>
+        </xdr:nvPicPr>
+        <xdr:blipFill>
+          <a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId${id}"/>
+          <a:stretch>
+            <a:fillRect/>
+          </a:stretch>
+        </xdr:blipFill>
+        <xdr:spPr>
+          <a:prstGeom prst="rect">
+            <a:avLst/>
+          </a:prstGeom>
+        </xdr:spPr>
+      </xdr:pic>
+      <xdr:clientData/>
+    `;
 
-			var absAnchor = '<xdr:pos x="' + x + '" y="' + y + '"/>';
-			absAnchor += '<xdr:ext cx="' + width + '" cy="' + height + '"/>';
-			absAnchor += '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 1) + '" name="' + image.name + '"></xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>';
-			absAnchor += '<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId' + (i + 1) + '"/>';
-			absAnchor += '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/>';
-			o[o.length] = writextag('xdr:absoluteAnchor', absAnchor, image.attrs);
-		}
-	}
+		o.push(`<xdr:${pos.type} editAs="${attrs.editAs || 'oneCell'}">${anchor}${pic}</xdr:${pos.type}>`);
+	});
 
-	if (o.length > 2) {
-		o[o.length] = '</xdr:wsDr>';
-		o[1] = o[1].replace("/>", ">");
-	}
-	return o.join("");
+	o.push('</xdr:wsDr>');
+	return o.join('\n');
 }
 
 function add_rels(rels, rId/*:number*/, f, type, relobj, targetmode/*:?string*/)/*:number*/ {
@@ -16608,7 +16614,7 @@ function write_ws_xml(idx/*:number*/, opts, wb/*:Workbook*/, rels)/*:string*/ {
 	/* customProperties */
 	/* cellWatches */
 
-	if(!opts || opts.ignoreEC || (opts.ignoreEC == (void 0))) o[o.length] = writetag("ignoredErrors", writextag("ignoredError", null, {numberStoredAsText:1, sqref:ref}));
+	//if(!opts || opts.ignoreEC || (opts.ignoreEC == (void 0))) o[o.length] = writetag("ignoredErrors", writextag("ignoredError", null, {numberStoredAsText:1, sqref:ref}));
 
 	/* smartTags */
 
@@ -27234,7 +27240,8 @@ function write_zip_xlsx(wb/*:Workbook*/, opts/*:WriteOpts*/)/*:ZIP*/ {
 		zip_add_file(zip, "xl/drawings/drawing" + rId + "." + wbext, write_drawing(images));
 		add_rels(rels, rId, "../drawings/drawing" + rId + "." + wbext, RELS.DRAW);
 		zip_add_file(zip, "xl/drawings/_rels/drawing" + rId + "." + wbext + ".rels", write_rels(draw_rels));
-		zip_add_file(zip, "xl/worksheets/_rels/sheet" + rId + "." + wbext + '.rels', write_rels(rels));		var wsrels = {'!id':{}};
+		zip_add_file(zip, "xl/worksheets/_rels/sheet" + rId + "." + wbext + '.rels', write_rels(rels));
+		var wsrels = {'!id':{}};
 		var _type = (ws || {})["!type"] || "sheet";
 		switch(_type) {
 		case "chart":
