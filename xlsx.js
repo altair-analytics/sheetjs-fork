@@ -5719,21 +5719,21 @@ function write_drawing(images) {
 
 		let anchor = '';
 		if (pos.type === 'twoCellAnchor') {
-			const from = pos.from || { col: 0, row: 0 };
-			const to = pos.to || { col: 0, row: 0 };
+			const from = pos.from || { col: 0, row: 0, colOff: 0, rowOff: 0 };
+			const to = pos.to || { col: 0, row: 0, colOff: 0, rowOff: 0 };
 
 			anchor = `
         <xdr:from>
           <xdr:col>${from.col}</xdr:col>
-          <xdr:colOff>0</xdr:colOff>
+          <xdr:colOff>${from.colOff}</xdr:colOff>
           <xdr:row>${from.row}</xdr:row>
-          <xdr:rowOff>0</xdr:rowOff>
+          <xdr:rowOff>${from.rowOff}</xdr:rowOff>
         </xdr:from>
         <xdr:to>
           <xdr:col>${to.col}</xdr:col>
-          <xdr:colOff>0</xdr:colOff>
+          <xdr:colOff>${to.colOff}</xdr:colOff>
           <xdr:row>${to.row}</xdr:row>
-          <xdr:rowOff>99999</xdr:rowOff>
+          <xdr:rowOff>${to.rowOff}</xdr:rowOff>
         </xdr:to>
       `;
 		}
