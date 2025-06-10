@@ -5795,7 +5795,7 @@ function write_drawing(images) {
 		const pos = image.position || {};
 		const id = i + 1;
 		const name = image.name || `Image${id}`;
-		const attrs = image.attrs || { editAs: "oneCell", noChangeAspect: '1' };
+		const attrs = image.attrs || { editAs: "oneCell" };
 
 		let anchor = '';
 		if (pos.type === 'twoCellAnchor') {
@@ -5824,8 +5824,7 @@ function write_drawing(images) {
         <xdr:nvPicPr>
           <xdr:cNvPr id="${id}" name="${name}"/>
           <xdr:cNvPicPr>
-            <a:picLocks noChangeAspect="0"/>
-            <a:picLocks noChangeAspect="${attrs.noChangeAspect}"/>
+            <a:picLocks noChangeAspect="1"/>
           </xdr:cNvPicPr>
         </xdr:nvPicPr>
         <xdr:blipFill>
