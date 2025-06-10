@@ -5818,7 +5818,7 @@ function write_drawing(images) {
       `;
 		} else if (pos.type === 'oneCellAnchor') {
 			const from = pos.from || { col: 0, row: 0, colOff: 0, rowOff: 0 };
-
+			const ext = pos.ext || { cx: 2438400, cy: 1828800 };
 			anchor = `
 			<xdr:from>
 			  <xdr:col>${from.col}</xdr:col>
@@ -5826,6 +5826,7 @@ function write_drawing(images) {
 			  <xdr:row>${from.row}</xdr:row>
 			  <xdr:rowOff>${from.rowOff}</xdr:rowOff>
 			</xdr:from>
+			<xdr:ext cx="${ext.cx}" cy="${ext.cy}"/>
 		  `;
 		}
 
@@ -5852,7 +5853,9 @@ function write_drawing(images) {
       <xdr:clientData/>
     `;
 
-		o.push(`<xdr:${pos.type} editAs="${attrs.editAs || 'oneCell'}">${anchor}${pic}</xdr:${pos.type}>`);
+		const editAs = pos.type === 'twoCellAnchor' ? `editAs="${attrs.editAs || 'oneCell'}"` : '';
+
+		o.push(`<xdr:${pos.type} ${editAs}>${anchor}${pic}</xdr:${pos.type}>`);
 	});
 
 	o.push('</xdr:wsDr>');
