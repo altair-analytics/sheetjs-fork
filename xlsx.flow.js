@@ -5791,7 +5791,7 @@ var DRAW_ROOT = writextag('xdr:wsDr', null, {
 	// 'xmlns': XMLNS.RELS
 });
 
-function write_drawing(images, worksheet) {
+function write_drawing(images) {
 	var o = [];
 	o.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>');
 	o.push('<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">');
@@ -5821,25 +5821,8 @@ function write_drawing(images, worksheet) {
           <xdr:rowOff>${to.rowOff}</xdr:rowOff>
         </xdr:to>
       `;
-		} else if (pos.type === 'centeredInCell') {
-			// New positioning type for centered images
-			const centerPos = drawingCalculateCenteredPosition(pos, worksheet, image);
-
-			anchor = `
-        <xdr:from>
-          <xdr:col>${centerPos.from.col}</xdr:col>
-          <xdr:colOff>${centerPos.from.colOff}</xdr:colOff>
-          <xdr:row>${centerPos.from.row}</xdr:row>
-          <xdr:rowOff>${centerPos.from.rowOff}</xdr:rowOff>
-        </xdr:from>
-        <xdr:to>
-          <xdr:col>${centerPos.to.col}</xdr:col>
-          <xdr:colOff>${centerPos.to.colOff}</xdr:colOff>
-          <xdr:row>${centerPos.to.row}</xdr:row>
-          <xdr:rowOff>${centerPos.to.rowOff}</xdr:rowOff>
-        </xdr:to>
-      `;
 		}
+		// Add other anchor types (oneCellAnchor, absoluteAnchor) similarly...
 
 		const pic = `
       <xdr:pic>
@@ -5864,65 +5847,11 @@ function write_drawing(images, worksheet) {
       <xdr:clientData/>
     `;
 
-		const anchorType = pos.type === 'centeredInCell' ? 'twoCellAnchor' : pos.type;
-		o.push(`<xdr:${anchorType} editAs="${attrs.editAs || 'oneCell'}">${anchor}${pic}</xdr:${anchorType}>`);
+		o.push(`<xdr:${pos.type} editAs="${attrs.editAs || 'oneCell'}">${anchor}${pic}</xdr:${pos.type}>`);
 	});
 
 	o.push('</xdr:wsDr>');
 	return o.join('\n');
-}
-
-function drawingCalculateCenteredPosition(pos, worksheet, image) {
-	// Default cell dimensions in EMUs (English Metric Units)
-	// 1 pixel ≈ 9525 EMUs, but Excel uses different ratios for rows/cols
-	const DEFAULT_COL_WIDTH_EMU = 64 * 9525;
-	const DEFAULT_ROW_HEIGHT_EMU = 20 * 9525;
-
-	const colWidth = drawingGetCellWidth(worksheet, pos.col) || DEFAULT_COL_WIDTH_EMU;
-	const rowHeight = drawingGetCellHeight(worksheet, pos.row) || DEFAULT_ROW_HEIGHT_EMU;
-
-	const imageWidth = (image.width || 100) * 9525;
-	const imageHeight = (image.height || 80) * 9525;
-
-	const padding = (pos.padding || 5) * 9525;
-
-	const availableWidth = colWidth - (2 * padding);
-	const availableHeight = rowHeight - (2 * padding);
-
-	const horizontalOffset = padding + (availableWidth - imageWidth) / 2;
-	const verticalOffset = padding + (availableHeight - imageHeight) / 2;
-
-	const finalImageWidth = Math.min(imageWidth, availableWidth);
-	const finalImageHeight = Math.min(imageHeight, availableHeight);
-
-	return {
-		from: {
-			col: pos.col,
-			row: pos.row,
-			colOff: Math.max(0, horizontalOffset),
-			rowOff: Math.max(0, verticalOffset)
-		},
-		to: {
-			col: pos.col,
-			row: pos.row,
-			colOff: Math.max(0, horizontalOffset + finalImageWidth),
-			rowOff: Math.max(0, verticalOffset + finalImageHeight)
-		}
-	};
-}
-
-function drawingGetCellWidth(worksheet, col) {
-	if (worksheet['!cols'] && worksheet['!cols'][col] && worksheet['!cols'][col].width) {
-		return worksheet['!cols'][col].width * 7 * 9525;
-	}
-	return null;
-}
-
-function drawingGetCellHeight(worksheet, row) {
-	if (worksheet['!rows'] && worksheet['!rows'][row] && worksheet['!rows'][row].hpt) {
-		return worksheet['!rows'][row].hpt * 12700;
-	}
-	return null;
 }
 
 function add_rels(rels, rId/*:number*/, f, type, relobj, targetmode/*:?string*/)/*:number*/ {
@@ -27313,7 +27242,7 @@ function write_zip_xlsx(wb/*:Workbook*/, opts/*:WriteOpts*/)/*:ZIP*/ {
 			zip_add_file(zip, f, image.data);
 			add_rels(draw_rels, sId, "../media/" + image.name, RELS.IMG);
 		}
-		zip_add_file(zip, "xl/drawings/drawing" + rId + "." + wbext, write_drawing(images, ws));
+		zip_add_file(zip, "xl/drawings/drawing" + rId + "." + wbext, write_drawing(images));
 		add_rels(rels, rId, "../drawings/drawing" + rId + "." + wbext, RELS.DRAW);
 		zip_add_file(zip, "xl/drawings/_rels/drawing" + rId + "." + wbext + ".rels", write_rels(draw_rels));
 		zip_add_file(zip, "xl/worksheets/_rels/sheet" + rId + "." + wbext + '.rels', write_rels(rels));
