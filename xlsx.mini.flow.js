@@ -5506,6 +5506,17 @@ function write_drawing(images) {
           <xdr:rowOff>${to.rowOff}</xdr:rowOff>
         </xdr:to>
       `;
+		} else if (pos.type === 'oneCellAnchor') {
+			const from = pos.from || { col: 0, row: 0, colOff: 0, rowOff: 0 };
+
+			anchor = `
+			<xdr:from>
+			  <xdr:col>${from.col}</xdr:col>
+			  <xdr:colOff>${from.colOff}</xdr:colOff>
+			  <xdr:row>${from.row}</xdr:row>
+			  <xdr:rowOff>${from.rowOff}</xdr:rowOff>
+			</xdr:from>
+		  `;
 		}
 
 		const pic = `
